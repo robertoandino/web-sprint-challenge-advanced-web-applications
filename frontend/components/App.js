@@ -5,6 +5,7 @@ import LoginForm from './LoginForm'
 import Message from './Message'
 import ArticleForm from './ArticleForm'
 import Spinner from './Spinner'
+import axios from 'axios'
 
 const articlesUrl = 'http://localhost:9000/api/articles'
 const loginUrl = 'http://localhost:9000/api/login'
@@ -18,8 +19,8 @@ export default function App() {
 
   // ✨ Research `useNavigate` in React Router v.6
   const navigate = useNavigate()
-  const redirectToLogin = () => { /* ✨ implement */ }
-  const redirectToArticles = () => { /* ✨ implement */ }
+  const redirectToLogin = () => { /* ✨ implement */ navigate('/LoginForm') }
+  const redirectToArticles = () => { /* ✨ implement */ navigate('/Articles')}
 
   const logout = () => {
     // ✨ implement
@@ -27,15 +28,34 @@ export default function App() {
     // and a message saying "Goodbye!" should be set in its proper state.
     // In any case, we should redirect the browser back to the login screen,
     // using the helper above.
+    localStorage.removeItem('token')
+    setMessage("Goodbye!")
+    redirectToLogin
   }
 
-  const login = ({ username, password }) => {
+  const login = async ({ username, password }) => {
     // ✨ implement
     // We should flush the message state, turn on the spinner
     // and launch a request to the proper endpoint.
     // On success, we should set the token to local storage in a 'token' key,
     // put the server success message in its proper state, and redirect
     // to the Articles screen. Don't forget to turn off the spinner!
+
+
+    try {
+      setSpinnerOn(true)
+      const { data } = await axios.post(
+        loginUrl,
+        { username, password }
+      )
+      localStorage.setItem('token', data.token)
+      redirectToArticles()
+      setMessage(data.message)
+    }catch (err){
+      setMessage(err.message || 'An error ocurred. Please try again.')
+    }finally {
+      setSpinnerOn(false)
+    }
   }
 
   const getArticles = () => {
@@ -46,8 +66,25 @@ export default function App() {
     // put the server success message in its proper state.
     // If something goes wrong, check the status of the response:
     // if it's a 401 the token might have gone bad, and we should redirect to login.
-    // Don't forget to turn off the spinner!
+    // Don't forget to turn off the spinner
+  
+    setMessage('');
+    const token = localStorage.getItem('token')
+  
+    axios.get(articlesUrl, {
+      headers: {
+        Authorization: token
+      },
+    })
+      .then(response => {
+        console.log(response.data.articles)
+        setArticles(response.data.articles)
+      })
+      .catch(error => {
+        setMessage(error.message)
+      })
   }
+ 
 
   const postArticle = article => {
     // ✨ implement
@@ -68,8 +105,8 @@ export default function App() {
   return (
     // ✨ fix the JSX: `Spinner`, `Message`, `LoginForm`, `ArticleForm` and `Articles` expect props ❗
     <>
-      <Spinner />
-      <Message />
+      <Spinner on={spinnerOn}/>
+      <Message message={message}/>
       <button id="logout" onClick={logout}>Logout from app</button>
       <div id="wrapper" style={{ opacity: spinnerOn ? "0.25" : "1" }}> {/* <-- do not change this line */}
         <h1>Advanced Web Applications</h1>
@@ -78,11 +115,21 @@ export default function App() {
           <NavLink id="articlesScreen" to="/articles">Articles</NavLink>
         </nav>
         <Routes>
-          <Route path="/" element={<LoginForm />} />
+          <Route path="/" element={<LoginForm login={login}/>} />
           <Route path="articles" element={
             <>
-              <ArticleForm />
-              <Articles />
+              <ArticleForm
+                setCurrentArticleId={setCurrentArticleId}
+                deleteArticle={deleteArticle}
+                updateArticle={updateArticle}
+                postArticle={postArticle}
+              />
+              <Articles 
+                getArticles={getArticles}
+                articles={articles}
+                setCurrentArticleId={setCurrentArticleId}
+                deleteArticle={deleteArticle}  
+              />
             </>
           } />
         </Routes>
