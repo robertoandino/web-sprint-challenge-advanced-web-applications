@@ -27,7 +27,7 @@ export default function LoginForm(props) {
     // trimmed password must be >= 8 for
     // the button to become enabled
     //values.username
-    if(values.username.length >= 3 && values.password.length >= 8){
+    if(values.username.trim().length >= 3 && values.password.trim().length >= 8){
       return false
     }
     return true

@@ -19,8 +19,10 @@ export default function App() {
 
   // ✨ Research `useNavigate` in React Router v.6
   const navigate = useNavigate()
-  const redirectToLogin = () => { /* ✨ implement */ navigate('/LoginForm') }
-  const redirectToArticles = () => { /* ✨ implement */ navigate('/Articles')}
+  const redirectToLogin = () => { /* ✨ implement */ navigate('/') }
+  const redirectToArticles = () => { /* ✨ implement */ navigate('articles')}
+  const token = localStorage.getItem('token')
+  let updateMessage = true;
 
   const logout = () => {
     // ✨ implement
@@ -28,9 +30,9 @@ export default function App() {
     // and a message saying "Goodbye!" should be set in its proper state.
     // In any case, we should redirect the browser back to the login screen,
     // using the helper above.
+    redirectToLogin()
     localStorage.removeItem('token')
     setMessage("Goodbye!")
-    redirectToLogin
   }
 
   const login = async ({ username, password }) => {
@@ -68,21 +70,29 @@ export default function App() {
     // if it's a 401 the token might have gone bad, and we should redirect to login.
     // Don't forget to turn off the spinner
   
-    setMessage('');
-    const token = localStorage.getItem('token')
-  
+    //const token = localStorage.getItem('token')
+
+    setSpinnerOn(true)
+
     axios.get(articlesUrl, {
       headers: {
         Authorization: token
       },
     })
       .then(response => {
-        console.log(response.data.articles)
         setArticles(response.data.articles)
+        if(updateMessage){
+          setMessage(response.data.message)
+        }
+        console.log(articles)
       })
       .catch(error => {
         setMessage(error.message)
       })
+      .finally(() => {
+        setSpinnerOn(false)
+      })
+      
   }
  
 
@@ -91,15 +101,80 @@ export default function App() {
     // The flow is very similar to the `getArticles` function.
     // You'll know what to do! Use log statements or breakpoints
     // to inspect the response from the server.
+    setSpinnerOn(true)
+    
+    axios.post(articlesUrl, article, {
+      headers: {
+        Authorization: token
+      }
+    })
+      .then(res => {
+        updateMessage = false
+        getArticles();
+        setMessage(res.data.message)
+      })
+      .catch(err => {
+        setMessage(err.response.data.message)
+      })
+      .finally(() => {
+        setSpinnerOn(false)
+      })
+
   }
 
   const updateArticle = ({ article_id, article }) => {
     // ✨ implement
     // You got this!
+
+    setCurrentArticleId(article_id)
+
+    setSpinnerOn(true)
+
+    console.log("updated")
+
+    console.log(article_id + " " + JSON.stringify(article, null, 2))
+    //console.log("article " + article.title)
+
+    axios.put(`${articlesUrl}/${article_id}`, article, {
+      headers: {
+        Authorization: token
+      }
+    })
+      .then(res => {
+        updateMessage = false
+        getArticles();
+        setMessage(res.data.message)
+      })
+      .catch(err => {
+        setMessage(err.response.data.message)
+      })
+      .finally(() => {
+        setSpinnerOn(false)
+      })
+    
   }
 
   const deleteArticle = article_id => {
     // ✨ implement
+    setSpinnerOn(true)
+    
+    axios.delete(`${articlesUrl}/${article_id}`, {
+      headers: {
+        Authorization: token
+      }
+    })
+      .then(res => {
+        updateMessage = false
+        setMessage(res.data.message)
+        getArticles();
+      })
+      .catch(err => {
+        setMessage(err.response.data.message)
+      })
+      .finally(() => {
+        setSpinnerOn(false)
+      })
+
   }
 
   return (
@@ -122,9 +197,12 @@ export default function App() {
                 setCurrentArticleId={setCurrentArticleId}
                 deleteArticle={deleteArticle}
                 updateArticle={updateArticle}
+                articles={articles}
                 postArticle={postArticle}
+                currentArticleId={currentArticleId}
               />
               <Articles 
+                updateArticle={updateArticle}
                 getArticles={getArticles}
                 articles={articles}
                 setCurrentArticleId={setCurrentArticleId}
