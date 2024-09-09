@@ -70,8 +70,6 @@ export default function App() {
     // if it's a 401 the token might have gone bad, and we should redirect to login.
     // Don't forget to turn off the spinner
   
-    //const token = localStorage.getItem('token')
-
     setSpinnerOn(true)
 
     axios.get(articlesUrl, {
@@ -84,7 +82,6 @@ export default function App() {
         if(updateMessage){
           setMessage(response.data.message)
         }
-        console.log(articles)
       })
       .catch(error => {
         setMessage(error.message)
@@ -129,11 +126,6 @@ export default function App() {
     setCurrentArticleId(article_id)
 
     setSpinnerOn(true)
-
-    console.log("updated")
-
-    console.log(article_id + " " + JSON.stringify(article, null, 2))
-    //console.log("article " + article.title)
 
     axios.put(`${articlesUrl}/${article_id}`, article, {
       headers: {
